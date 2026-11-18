@@ -20,7 +20,7 @@
             <span class="text-2xl">⛽</span>
             <div>
                 <h1 class="text-lg font-bold leading-tight">Control de Combustible</h1>
-                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Filtros Dinámicos</p>
+                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Alertas y Filtros</p>
             </div>
         </div>
         <span id="sync-status" class="text-xs bg-slate-700 px-2.5 py-1 rounded-full font-semibold">🔄 Conectando...</span>
@@ -156,9 +156,18 @@
             </form>
         </div>
 
-        <!-- PESTAÑA 2: INDICADORES / DASHBOARD CON FILTROS -->
+        <!-- PESTAÑA 2: INDICADORES / DASHBOARD CON FILTROS Y ALERTAS -->
         <div id="tab-dashboard" class="tab-content space-y-4">
             
+            <!-- SECCIÓN DE ALERTAS ANÓMALAS -->
+            <div id="contenedor-alertas" class="hidden bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 shadow-sm space-y-2">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">🚨</span>
+                    <h3 class="text-xs font-black text-rose-900 uppercase tracking-wider">Alertas de Consumo Fuera de Parámetros</h3>
+                </div>
+                <div id="lista-alertas" class="space-y-2 text-xs"></div>
+            </div>
+
             <!-- Barra de Filtros del Dashboard -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex justify-between items-center">
@@ -667,9 +676,9 @@
                     </div>
                 `).join('');
 
-            // Agrupar exclusivamente con los registros que pasaron el filtro de fecha/tipo/combustible
             let vehiculosStats = {};
             let cargasCronologicas = [...cargasData].sort((a, b) => a.id - b.id);
+            let alertasAnomalas = [];
             
             filtrados.forEach(c => {
                 const key = `${c.placa} (Int: ${c.interno})`;
@@ -704,11 +713,38 @@
                     difHor = 0;
                 }
 
-                const litrosUltimaCarga = cargasVeh.length > 0 ? cargasVeh[cargasVeh.length - 1].litros : 0;
+                const ultimaCargaObj = cargasVeh.length > 0 ? cargasVeh[cargasVeh.length - 1] : null;
+                const litrosUltimaCarga = ultimaCargaObj ? ultimaCargaObj.litros : 0;
 
                 let kmPorLitro = litrosUltimaCarga > 0 && difKm > 0 ? (difKm / litrosUltimaCarga) : 0;
                 let consumoCada100Km = difKm > 0 && litrosUltimaCarga > 0 ? (litrosUltimaCarga / difKm) * 100 : 0;
                 let litrosPorHora = difHor > 0 && litrosUltimaCarga > 0 ? (litrosUltimaCarga / difHor) : 0;
+
+                // REGLAS DE ALERTA DE CONSUMO ANÓMALO (Optimizada para detectar incongruencias extremas de prueba)
+                if (ultimaCargaObj) {
+                    if (litrosUltimaCarga > 80 && difKm < 50) {
+                        alertasAnomalas.push({
+                            veh: veh,
+                            msg: `Anomalía crítica: Cargó <strong>${litrosUltimaCarga.toFixed(2)} L</strong> con apenas <strong>${difKm} Km</strong> recorridos.`,
+                            fecha: ultimaCargaObj.fecha,
+                            conductor: ultimaCargaObj.nombreConductor
+                        });
+                    } else if (litrosUltimaCarga > 150) {
+                        alertasAnomalas.push({
+                            veh: veh,
+                            msg: `Carguío masivo inusual: <strong>${litrosUltimaCarga.toFixed(2)} L</strong> en una sola recarga.`,
+                            fecha: ultimaCargaObj.fecha,
+                            conductor: ultimaCargaObj.nombreConductor
+                        });
+                    } else if (difKm > 5 && kmPorLitro > 0 && kmPorLitro < 1.0) {
+                        alertasAnomalas.push({
+                            veh: veh,
+                            msg: `Rendimiento fuera de parámetros: <strong>${kmPorLitro.toFixed(2)} Km/L</strong> (${consumoCada100Km.toFixed(1)} L/100km).`,
+                            fecha: ultimaCargaObj.fecha,
+                            conductor: ultimaCargaObj.nombreConductor
+                        });
+                    }
+                }
 
                 return {
                     veh: veh,
@@ -725,6 +761,24 @@
                     litrosPorHora: litrosPorHora
                 };
             });
+
+            // RENDERIZAR ALERTAS
+            const contenedorAlertas = document.getElementById('contenedor-alertas');
+            const listaAlertas = document.getElementById('lista-alertas');
+            if (alertasAnomalas.length > 0) {
+                contenedorAlertas.classList.remove('hidden');
+                listaAlertas.innerHTML = alertasAnomalas.map(a => `
+                    <div class="bg-white p-2.5 rounded-xl border border-rose-200 flex justify-between items-center">
+                        <div>
+                            <strong class="text-rose-900">🚛 ${a.veh}</strong> (${a.fecha})<br>
+                            <span class="text-slate-600">${a.msg} • Conductor: ${a.conductor}</span>
+                        </div>
+                        <span class="bg-rose-100 text-rose-800 font-bold px-2 py-1 rounded text-[10px]">⚠️ Revisar</span>
+                    </div>
+                `).join('');
+            } else {
+                contenedorAlertas.classList.add('hidden');
+            }
 
             vehiculosArray.sort((a, b) => b.litros - a.litros);
 
@@ -838,4 +892,4 @@
         }
     </script>
 </body>
-</html>
+</htm
