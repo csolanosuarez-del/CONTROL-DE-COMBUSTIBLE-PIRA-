@@ -21,7 +21,7 @@
             <span class="text-2xl">⛽</span>
             <div>
                 <h1 class="text-lg font-bold leading-tight">Control de Combustible</h1>
-                <p class="text-[11px] text-amber-400 font-medium">Validación Fotográfica + Dashboard + Excel</p>
+                <p class="text-[11px] text-amber-400 font-medium">Validación Manual + Alerta de Cifras + Excel</p>
             </div>
         </div>
         <span id="sync-status" class="text-xs bg-slate-700 px-2.5 py-1 rounded-full font-semibold">🔄 Conectando...</span>
@@ -62,9 +62,9 @@
                     <div id="info-personal" class="text-xs text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 hidden"></div>
                 </div>
 
-                <!-- CAPTURA DE FOTOS CON COMPRESIÓN Y LECTURA OCR -->
+                <!-- CAPTURA DE FOTOS CON EVIDENCIA (SIN AUTO-LLENADO ERRÓNEO) -->
                 <div class="space-y-3 pt-1">
-                    <p class="text-xs font-bold text-slate-700">3. Evidencia Fotográfica Obligatoria (Compresión Automática)</p>
+                    <p class="text-xs font-bold text-slate-700">3. Evidencia Fotográfica Obligatoria (Tome la foto e introduzca el valor)</p>
                     
                     <!-- Foto 1: Odómetro -->
                     <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 bg-slate-50 space-y-2">
@@ -77,14 +77,14 @@
                         </div>
                         <div id="preview-box-km" class="hidden space-y-2">
                             <img id="img-km" class="w-full max-h-44 object-contain rounded-lg border bg-black">
-                            <div class="flex items-center justify-between text-[11px] text-slate-500">
+                            <div class="flex justify-between items-center text-[11px] text-slate-500">
                                 <span id="peso-km"></span>
-                                <span id="ocr-status-km" class="font-bold text-amber-600"></span>
+                                <span class="font-bold text-emerald-600">✅ Evidencia guardada</span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-500 mb-1">Kilometraje Lecturado / Confirmado (Verifique):</label>
-                            <input type="number" step="0.1" id="c-km" placeholder="Confirme o corrija el número" class="w-full p-2.5 border-2 border-amber-400 rounded-xl bg-amber-50/50 text-sm font-bold text-slate-900 outline-none" required>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Kilometraje Actual (Digite viendo la foto):</label>
+                            <input type="number" step="0.1" id="c-km" placeholder="Ej. 45200.5" class="w-full p-2.5 border-2 border-slate-300 rounded-xl bg-white text-sm font-bold text-slate-900 outline-none focus:border-amber-500" required>
                         </div>
                     </div>
 
@@ -99,13 +99,13 @@
                         </div>
                         <div id="preview-box-hor" class="hidden space-y-2">
                             <img id="img-hor" class="w-full max-h-44 object-contain rounded-lg border bg-black">
-                            <div class="flex items-center justify-between text-[11px] text-slate-500">
+                            <div class="flex justify-between items-center text-[11px] text-slate-500">
                                 <span id="peso-hor"></span>
-                                <span id="ocr-status-hor" class="font-bold text-amber-600"></span>
+                                <span class="font-bold text-emerald-600">✅ Evidencia guardada</span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-500 mb-1">Horómetro Lecturado / Confirmado:</label>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Horómetro Actual:</label>
                             <input type="number" step="0.1" id="c-horometro" placeholder="0.0" class="w-full p-2.5 border rounded-xl bg-white text-sm font-bold text-slate-900 outline-none">
                         </div>
                     </div>
@@ -121,9 +121,9 @@
                         </div>
                         <div id="preview-box-litros" class="hidden space-y-2">
                             <img id="img-litros" class="w-full max-h-44 object-contain rounded-lg border bg-black">
-                            <div class="flex items-center justify-between text-[11px] text-slate-500">
+                            <div class="flex justify-between items-center text-[11px] text-slate-500">
                                 <span id="peso-litros"></span>
-                                <span id="ocr-status-litros" class="font-bold text-amber-600"></span>
+                                <span class="font-bold text-emerald-600">✅ Evidencia guardada</span>
                             </div>
                         </div>
                         <div class="grid grid-cols-3 gap-2 pt-1">
@@ -135,8 +135,8 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Litros (L) - ¡Verifique!</label>
-                                <input type="number" step="0.01" id="c-litros" placeholder="0.00" class="w-full p-2.5 border-2 border-amber-500 rounded-xl bg-amber-50/50 text-sm font-bold outline-none" required>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Litros (L)</label>
+                                <input type="number" step="0.01" id="c-litros" placeholder="Ej. 1585.0" class="w-full p-2.5 border-2 border-amber-500 rounded-xl bg-amber-50/50 text-sm font-bold outline-none" required>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Total (Bs)</label>
@@ -152,7 +152,7 @@
                 </div>
 
                 <button type="submit" id="btn-guardar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3.5 rounded-xl shadow-lg text-sm transition">
-                    ✅ Guardar Carguío y Sincronizar
+                    ✅ Validar y Guardar Carguío
                 </button>
             </form>
         </div>
@@ -315,8 +315,6 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            const statusEl = document.getElementById(`ocr-status-${tipo}`);
-            statusEl.innerText = "⏳ Comprimiendo y leyendo...";
             document.getElementById(`preview-box-${tipo}`).classList.remove('hidden');
 
             const reader = new FileReader();
@@ -338,30 +336,6 @@
                     const kb = Math.round((compressedDataUrl.length * 3 / 4) / 1024);
                     document.getElementById(`img-${tipo}`).src = compressedDataUrl;
                     document.getElementById(`peso-${tipo}`).innerText = `📦 Optimizada: ${kb} KB`;
-
-                    Tesseract.recognize(compressedDataUrl, 'eng', {
-                        tessedit_char_whitelist: '0123456789.'
-                    }).then(({ data: { text } }) => {
-                        const numeros = text.match(/\d+(\.\d+)?/g);
-                        if (numeros && numeros.length > 0) {
-                            // Extraer el número más largo detectado (suele ser el valor real en pantallas)
-                            const candidato = numeros.sort((a, b) => b.length - a.length)[0];
-                            statusEl.innerText = `🤖 OCR sugirió: ${candidato} (⚠️ Confirme visualmente)`;
-                            
-                            // Asignar resaltando que requiere revisión
-                            if (tipo === 'km') {
-                                document.getElementById('c-km').value = candidato;
-                            } else if (tipo === 'hor') {
-                                document.getElementById('c-horometro').value = candidato;
-                            } else if (tipo === 'litros') {
-                                document.getElementById('c-litros').value = candidato;
-                            }
-                        } else {
-                            statusEl.innerText = "📸 Foto lista (Digite el valor visto en pantalla)";
-                        }
-                    }).catch(() => {
-                        statusEl.innerText = "📸 Foto lista";
-                    });
                 };
                 img.src = e.target.result;
             };
@@ -375,9 +349,25 @@
             const veh = MAESTRO_VEHICULOS[placa] || { interno: 'S/I', tipo: 'No registrado', empresa: 'N/A' };
             const per = MAESTRO_PERSONAL[cod] || { nombre: 'Código ' + cod, cargo: 'N/A' };
 
+            const litros = parseFloat(document.getElementById('c-litros').value) || 0;
+            const km = parseFloat(document.getElementById('c-km').value) || 0;
+
             if (!fotosComprimidas.km || !fotosComprimidas.litros) {
                 alert("⚠️ Debe capturar la foto del odómetro y la foto del surtidor antes de guardar.");
                 return;
+            }
+
+            // 🛡️ ALERTA DE SEGURIDAD CONTRA CIFRAS DESCOMUNALES
+            if (litros > 3000 || litros <= 0) {
+                if (!confirm(`⚠️ ALERTA: Estás registrando ${litros} litros. ¿Es un valor correcto y no un error de dedo?`)) {
+                    return;
+                }
+            }
+
+            if (km > 2000000) {
+                if (!confirm(`⚠️ ALERTA: El kilometraje ingresado (${km} Km) es extremadamente alto. ¿Deseas continuar?`)) {
+                    return;
+                }
             }
 
             const id = Date.now();
@@ -393,9 +383,9 @@
                 nombreConductor: per.nombre,
                 cargoConductor: per.cargo,
                 tipoCombustible: document.getElementById('c-tipo-comb').value,
-                kmActual: parseFloat(document.getElementById('c-km').value) || 0,
+                kmActual: km,
                 horometroActual: parseFloat(document.getElementById('c-horometro').value) || 0,
-                litros: parseFloat(document.getElementById('c-litros').value) || 0,
+                litros: litros,
                 costo: parseFloat(document.getElementById('c-costo').value) || 0,
                 despachador: document.getElementById('c-despachador').value.trim(),
                 fotoKm: fotosComprimidas.km,
@@ -533,8 +523,8 @@
                 "Cód. Funcionario": c.codigoConductor,
                 "Nombre Funcionario": c.nombreConductor,
                 "Tipo Combustible": c.tipoCombustible,
-                "Km Actual (Foto)": c.kmActual,
-                "Horóm. Actual (Foto)": c.horometroActual,
+                "Km Actual": c.kmActual,
+                "Horóm. Actual": c.horometroActual,
                 "Litros Cargados": c.litros,
                 "Costo Total (Bs)": c.costo,
                 "Encargado Surtidor": c.despachador,
