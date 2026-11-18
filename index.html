@@ -21,7 +21,7 @@
             <span class="text-2xl">⛽</span>
             <div>
                 <h1 class="text-lg font-bold leading-tight">Control de Combustible</h1>
-                <p class="text-[11px] text-amber-400 font-medium">Validación Manual + Alerta de Cifras + Excel</p>
+                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Filtros + Validación Manual</p>
             </div>
         </div>
         <span id="sync-status" class="text-xs bg-slate-700 px-2.5 py-1 rounded-full font-semibold">🔄 Conectando...</span>
@@ -157,8 +157,42 @@
             </form>
         </div>
 
-        <!-- PESTAÑA 2: INDICADORES / DASHBOARD -->
+        <!-- PESTAÑA 2: INDICADORES / DASHBOARD CON FILTROS -->
         <div id="tab-dashboard" class="tab-content space-y-4">
+            
+            <!-- Barra de Filtros del Dashboard -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider">🎛️ Filtros de Indicadores</h3>
+                    <button onclick="limpiarFiltrosDashboard()" class="text-xs text-rose-600 font-bold hover:underline">🔄 Restablecer Filtros</button>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Tipo de Vehículo</label>
+                        <select id="dash-f-tipo" onchange="actualizarDashboard()" class="w-full p-2 border rounded-xl bg-slate-50 text-xs font-medium outline-none">
+                            <option value="">Todos los tipos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Combustible</label>
+                        <select id="dash-f-comb" onchange="actualizarDashboard()" class="w-full p-2 border rounded-xl bg-slate-50 text-xs font-medium outline-none">
+                            <option value="">Todos</option>
+                            <option value="Diésel">Diésel</option>
+                            <option value="Gasolina">Gasolina</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Año / Mes</label>
+                        <input type="month" id="dash-f-mes" onchange="actualizarDashboard()" class="w-full p-2 border rounded-xl bg-slate-50 text-xs font-medium outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Día Específico</label>
+                        <input type="date" id="dash-f-dia" onchange="actualizarDashboard()" class="w-full p-2 border rounded-xl bg-slate-50 text-xs font-medium outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjetas de Totales -->
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                     <span class="text-xs font-bold text-slate-400 uppercase">Total Litros Despachados</span>
@@ -252,11 +286,23 @@
             document.getElementById('c-fecha').value = new Date().toISOString().split('T')[0];
             
             const dl = document.getElementById('lista-placas');
+            const tiposSet = new Set();
+
             Object.keys(MAESTRO_VEHICULOS).sort().forEach(placa => {
                 const opt = document.createElement('option');
                 opt.value = placa;
                 opt.label = `Int: ${MAESTRO_VEHICULOS[placa].interno} - ${MAESTRO_VEHICULOS[placa].tipo}`;
                 dl.appendChild(opt);
+                tiposSet.add(MAESTRO_VEHICULOS[placa].tipo);
+            });
+
+            // Poblar selector de tipos de vehículo en el Dashboard
+            const tipoSelect = document.getElementById('dash-f-tipo');
+            Array.from(tiposSet).sort().forEach(tipo => {
+                const opt = document.createElement('option');
+                opt.value = tipo;
+                opt.textContent = tipo;
+                tipoSelect.appendChild(opt);
             });
         });
 
@@ -357,7 +403,6 @@
                 return;
             }
 
-            // 🛡️ ALERTA DE SEGURIDAD CONTRA CIFRAS DESCOMUNALES
             if (litros > 3000 || litros <= 0) {
                 if (!confirm(`⚠️ ALERTA: Estás registrando ${litros} litros. ¿Es un valor correcto y no un error de dedo?`)) {
                     return;
@@ -424,7 +469,28 @@
             }
         }
 
+        function limpiarFiltrosDashboard() {
+            document.getElementById('dash-f-tipo').value = "";
+            document.getElementById('dash-f-comb').value = "";
+            document.getElementById('dash-f-mes').value = "";
+            document.getElementById('dash-f-dia').value = "";
+            actualizarDashboard();
+        }
+
         function actualizarDashboard() {
+            const fTipo = document.getElementById('dash-f-tipo').value;
+            const fComb = document.getElementById('dash-f-comb').value;
+            const fMes = document.getElementById('dash-f-mes').value; // Formato YYYY-MM
+            const fDia = document.getElementById('dash-f-dia').value; // Formato YYYY-MM-DD
+
+            let filtrados = cargasData.filter(c => {
+                if (fTipo && c.tipoVehiculo !== fTipo) return false;
+                if (fComb && c.tipoCombustible !== fComb) return false;
+                if (fMes && !c.fecha.startsWith(fMes)) return false;
+                if (fDia && c.fecha !== fDia) return false;
+                return true;
+            });
+
             let totalLitros = 0;
             let totalCosto = 0;
             let totalKm = 0;
@@ -432,7 +498,7 @@
             let porCombustible = {};
             let porVehiculo = {};
 
-            cargasData.forEach(c => {
+            filtrados.forEach(c => {
                 totalLitros += c.litros || 0;
                 totalCosto += c.costo || 0;
                 totalKm += c.kmActual || 0;
@@ -450,7 +516,7 @@
             document.getElementById('kpi-horas').innerText = totalHoras.toLocaleString('es-BO', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + " Hrs";
 
             const combDiv = document.getElementById('kpi-combustible');
-            combDiv.innerHTML = Object.keys(porCombustible).length === 0 ? '<p class="text-slate-400">Sin registros aún.</p>' :
+            combDiv.innerHTML = Object.keys(porCombustible).length === 0 ? '<p class="text-slate-400">Sin registros para estos filtros.</p>' :
                 Object.entries(porCombustible).map(([comb, l]) => `
                     <div class="flex justify-between p-2 bg-slate-50 rounded-lg font-medium">
                         <span>⛽ ${comb}</span>
@@ -460,7 +526,7 @@
 
             const vehDiv = document.getElementById('kpi-vehiculos');
             const topVeh = Object.entries(porVehiculo).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            vehDiv.innerHTML = topVeh.length === 0 ? '<p class="text-slate-400">Sin registros aún.</p>' :
+            vehDiv.innerHTML = topVeh.length === 0 ? '<p class="text-slate-400">Sin registros para estos filtros.</p>' :
                 topVeh.map(([veh, l], index) => `
                     <div class="flex justify-between p-2 bg-slate-50 rounded-lg font-medium">
                         <span>#${index+1} 🚛 ${veh}</span>
