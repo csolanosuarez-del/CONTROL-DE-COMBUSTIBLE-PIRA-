@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         .tab-content { display: none; }
@@ -58,7 +57,7 @@
                 <!-- Búsqueda por CÓDIGO DE CONDUCTOR -->
                 <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
                     <label class="block text-xs font-bold text-slate-700">2. Código del Conductor / Funcionario</label>
-                    <input type="number" id="c-codigo" oninput="buscarPersonal()" placeholder="Ej. 894" class="w-full p-3 border border-slate-300 rounded-xl bg-white text-base font-bold outline-none focus:ring-2 focus:ring-slate-500" required>
+                    <input type="text" id="c-codigo" oninput="buscarPersonal()" placeholder="Ej. 894 o MA-532" class="w-full p-3 border border-slate-300 rounded-xl bg-white text-base font-bold uppercase outline-none focus:ring-2 focus:ring-slate-500" required>
                     <div id="info-personal" class="text-xs text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 hidden"></div>
                 </div>
 
@@ -72,7 +71,7 @@
                             <span class="text-xs font-bold text-slate-700">📸 Foto Odómetro (Km)</span>
                             <label class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shadow">
                                 Tomar / Subir Foto
-                                <input type="file" accept="image/*" capture="environment" onchange="procesarFoto(event, 'km')" class="hidden" required>
+                                <input type="file" id="file-km" accept="image/*" capture="environment" onchange="procesarFoto(event, 'km')" class="hidden">
                             </label>
                         </div>
                         <div id="preview-box-km" class="hidden space-y-2">
@@ -94,7 +93,7 @@
                             <span class="text-xs font-bold text-slate-700">⏱️ Foto Horómetro (Opcional)</span>
                             <label class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shadow">
                                 Tomar / Subir Foto
-                                <input type="file" accept="image/*" capture="environment" onchange="procesarFoto(event, 'hor')" class="hidden">
+                                <input type="file" id="file-hor" accept="image/*" capture="environment" onchange="procesarFoto(event, 'hor')" class="hidden">
                             </label>
                         </div>
                         <div id="preview-box-hor" class="hidden space-y-2">
@@ -116,7 +115,7 @@
                             <span class="text-xs font-bold text-amber-900">⛽ Foto Bomba / Ticket Litros</span>
                             <label class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shadow">
                                 Tomar / Subir Foto
-                                <input type="file" accept="image/*" capture="environment" onchange="procesarFoto(event, 'litros')" class="hidden" required>
+                                <input type="file" id="file-litros" accept="image/*" capture="environment" onchange="procesarFoto(event, 'litros')" class="hidden">
                             </label>
                         </div>
                         <div id="preview-box-litros" class="hidden space-y-2">
@@ -136,7 +135,7 @@
                             </div>
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Litros (L)</label>
-                                <input type="number" step="0.01" id="c-litros" placeholder="Ej. 1585.0" class="w-full p-2.5 border-2 border-amber-500 rounded-xl bg-amber-50/50 text-sm font-bold outline-none" required>
+                                <input type="number" step="0.01" id="c-litros" placeholder="Ej. 85.5" class="w-full p-2.5 border-2 border-amber-500 rounded-xl bg-amber-50/50 text-sm font-bold outline-none" required>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Total (Bs)</label>
@@ -342,7 +341,7 @@
         }
 
         function buscarPersonal() {
-            const cod = document.getElementById('c-codigo').value.trim();
+            const cod = document.getElementById('c-codigo').value.trim().toUpperCase();
             const box = document.getElementById('info-personal');
             if (MAESTRO_PERSONAL[cod]) {
                 const p = MAESTRO_PERSONAL[cod];
@@ -368,8 +367,8 @@
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const MAX_WIDTH = 1000;
-                    const scaleSize = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
+                    const scaleSize = Math.min(1, MAX_WIDTH / img.width);
+                    canvas.width = img.width * scaleSize;
                     canvas.height = img.height * scaleSize;
 
                     const ctx = canvas.getContext('2d');
@@ -389,30 +388,39 @@
 
         function guardarCarga(e) {
             e.preventDefault();
+            
             const placa = document.getElementById('c-placa').value.trim().toUpperCase();
-            const cod = document.getElementById('c-codigo').value.trim();
-            const veh = MAESTRO_VEHICULOS[placa] || { interno: 'S/I', tipo: 'No registrado', empresa: 'N/A' };
-            const per = MAESTRO_PERSONAL[cod] || { nombre: 'Código ' + cod, cargo: 'N/A' };
-
+            const cod = document.getElementById('c-codigo').value.trim().toUpperCase();
             const litros = parseFloat(document.getElementById('c-litros').value) || 0;
             const km = parseFloat(document.getElementById('c-km').value) || 0;
+            const costo = parseFloat(document.getElementById('c-costo').value) || 0;
+            const despachador = document.getElementById('c-despachador').value.trim();
 
-            if (!fotosComprimidas.km || !fotosComprimidas.litros) {
-                alert("⚠️ Debe capturar la foto del odómetro y la foto del surtidor antes de guardar.");
+            if (!fotosComprimidas.km) {
+                alert("⚠️ Falta la foto del Odómetro (Km). Por favor tome o suba la foto antes de guardar.");
                 return;
             }
-
-            if (litros > 3000 || litros <= 0) {
+            if (!fotosComprimidas.litros) {
+                alert("⚠️ Falta la foto de la Bomba / Ticket de Litros. Por favor tome o suba la foto antes de guardar.");
+                return;
+            }
+            if (litros <= 0 || costo <= 0) {
+                alert("⚠️ Verifique que los Litros y el Costo (Bs) sean mayores a 0.");
+                return;
+            }
+            if (litros > 3000) {
                 if (!confirm(`⚠️ ALERTA: Estás registrando ${litros} litros. ¿Es un valor correcto y no un error de dedo?`)) {
                     return;
                 }
             }
-
             if (km > 2000000) {
                 if (!confirm(`⚠️ ALERTA: El kilometraje ingresado (${km} Km) es extremadamente alto. ¿Deseas continuar?`)) {
                     return;
                 }
             }
+
+            const veh = MAESTRO_VEHICULOS[placa] || { interno: 'S/I', tipo: 'No registrado', empresa: 'N/A' };
+            const per = MAESTRO_PERSONAL[cod] || { nombre: 'Código ' + cod, cargo: 'N/A' };
 
             const id = Date.now();
             const registro = {
@@ -430,25 +438,38 @@
                 kmActual: km,
                 horometroActual: parseFloat(document.getElementById('c-horometro').value) || 0,
                 litros: litros,
-                costo: parseFloat(document.getElementById('c-costo').value) || 0,
-                despachador: document.getElementById('c-despachador').value.trim(),
+                costo: costo,
+                despachador: despachador,
                 fotoKm: fotosComprimidas.km,
                 fotoHor: fotosComprimidas.hor || '',
                 fotoLitros: fotosComprimidas.litros
             };
 
-            db.ref(`combustible_flota/cargas/${id}`).set(registro).then(() => {
-                alert("✅ ¡Carguío registrado con éxito y sincronizado!");
-                document.getElementById('form-carga').reset();
-                document.getElementById('c-fecha').value = new Date().toISOString().split('T')[0];
-                ['km', 'hor', 'litros'].forEach(t => {
-                    document.getElementById(`preview-box-${t}`).classList.add('hidden');
-                    fotosComprimidas[t] = null;
+            const btnGuardar = document.getElementById('btn-guardar');
+            btnGuardar.innerText = "⏳ Guardando registro...";
+            btnGuardar.disabled = true;
+
+            db.ref(`combustible_flota/cargas/${id}`).set(registro)
+                .then(() => {
+                    alert("✅ ¡Carguío registrado con éxito y sincronizado!");
+                    document.getElementById('form-carga').reset();
+                    document.getElementById('c-fecha').value = new Date().toISOString().split('T')[0];
+                    ['km', 'hor', 'litros'].forEach(t => {
+                        document.getElementById(`preview-box-${t}`).classList.add('hidden');
+                        fotosComprimidas[t] = null;
+                    });
+                    document.getElementById('info-vehiculo').classList.add('hidden');
+                    document.getElementById('info-personal').classList.add('hidden');
+                    
+                    btnGuardar.innerText = "✅ Validar y Guardar Carguío";
+                    btnGuardar.disabled = false;
+                    cambiarTab('auditoria');
+                })
+                .catch((err) => {
+                    alert("❌ Error al guardar en la base de datos: " + err.message);
+                    btnGuardar.innerText = "✅ Validar y Guardar Carguío";
+                    btnGuardar.disabled = false;
                 });
-                document.getElementById('info-vehiculo').classList.add('hidden');
-                document.getElementById('info-personal').classList.add('hidden');
-                cambiarTab('auditoria');
-            });
         }
 
         function verFoto(src, caption) {
@@ -554,22 +575,16 @@
                     difHor = 0;
                 }
 
-                // Litros de la última carga para calcular rendimiento reciente o litros totales consumidos en el tramo
                 const litrosUltimaCarga = cargasVeh.length > 0 ? cargasVeh[cargasVeh.length - 1].litros : 0;
 
-                // Rendimiento: Km por Litro (Km recorridos / Litros de la carga)
                 let kmPorLitro = litrosUltimaCarga > 0 && difKm > 0 ? (difKm / litrosUltimaCarga) : 0;
-                // Consumo Medio: Litros cada 100 Km ((Litros / Km recorridos) * 100)
                 let consumoCada100Km = difKm > 0 && litrosUltimaCarga > 0 ? (litrosUltimaCarga / difKm) * 100 : 0;
-
-                // Litros por Hora (si usa horómetro)
                 let litrosPorHora = difHor > 0 && litrosUltimaCarga > 0 ? (litrosUltimaCarga / difHor) : 0;
 
                 return {
                     veh: veh,
                     tipoVehiculo: data.tipoVehiculo,
                     litros: data.litrosTotales,
-                    litrosUltima: litrosUltimaCarga,
                     kmAnt: kmAnt,
                     kmAct: kmAct,
                     difKm: difKm,
@@ -613,8 +628,10 @@
                                 ${item.difKm > 0 ? `
                                     <span class="text-emerald-700 font-bold">${item.kmPorLitro.toFixed(2)} Km/L</span> 
                                     <span class="text-slate-500">(${item.consumo100Km.toFixed(1)} L / 100 Km)</span>
-                                ` : `<span class="text-slate-400">Sin tramo registrado</span>`}
-                                ${item.difHor > 0 ? `<div class="text-purple-700 font-semibold mt-0.5">Horas: +${item.difHor.toLocaleString()}h (${item.litrosPorHora.toFixed(2)} L/h)</div>` : ''}
+                                ` : `<span class="text-slate-400">Sin tramo previo</span>`}
+                                <div class="text-purple-700 font-semibold mt-0.5">
+                                    ⏱️ Horóm: Ant ${item.horAnt.toLocaleString()} | Act ${item.horAct.toLocaleString()} (+${item.difHor.toLocaleString()}h ${item.difHor > 0 ? `• ${item.litrosPorHora.toFixed(2)} L/h` : ''})
+                                </div>
                             </div>
                         </div>
                     </div>
