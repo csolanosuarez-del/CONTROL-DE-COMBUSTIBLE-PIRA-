@@ -20,7 +20,7 @@
             <span class="text-2xl">⛽</span>
             <div>
                 <h1 class="text-lg font-bold leading-tight">Control de Combustible</h1>
-                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Edición y Rendimiento</p>
+                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Filtros Dinámicos</p>
             </div>
         </div>
         <span id="sync-status" class="text-xs bg-slate-700 px-2.5 py-1 rounded-full font-semibold">🔄 Conectando...</span>
@@ -220,7 +220,7 @@
             </div>
 
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <h3 class="text-sm font-bold text-slate-900">🚛 Top Vehículos: Consumo, Recorrido y Rendimiento</h3>
+                <h3 id="titulo-top-vehiculos" class="text-sm font-bold text-slate-900">🚛 Unidades que Cargaron (Consumo y Rendimiento)</h3>
                 <div id="kpi-vehiculos" class="space-y-2 text-xs"></div>
             </div>
         </div>
@@ -645,20 +645,6 @@
             let totalHoras = 0;
             let porCombustible = {};
 
-            let vehiculosStats = {};
-            let cargasCronologicas = [...cargasData].sort((a, b) => a.id - b.id);
-            
-            cargasCronologicas.forEach(c => {
-                const key = `${c.placa} (Int: ${c.interno})`;
-                if (!vehiculosStats[key]) {
-                    vehiculosStats[key] = {
-                        litrosTotales: 0,
-                        tipoVehiculo: c.tipoVehiculo
-                    };
-                }
-                vehiculosStats[key].litrosTotales += c.litros || 0;
-            });
-
             filtrados.forEach(c => {
                 totalLitros += c.litros || 0;
                 totalCosto += c.costo || 0;
@@ -680,6 +666,21 @@
                         <strong class="text-amber-700">${l.toFixed(2)} Litros</strong>
                     </div>
                 `).join('');
+
+            // Agrupar exclusivamente con los registros que pasaron el filtro de fecha/tipo/combustible
+            let vehiculosStats = {};
+            let cargasCronologicas = [...cargasData].sort((a, b) => a.id - b.id);
+            
+            filtrados.forEach(c => {
+                const key = `${c.placa} (Int: ${c.interno})`;
+                if (!vehiculosStats[key]) {
+                    vehiculosStats[key] = {
+                        litrosTotales: 0,
+                        tipoVehiculo: c.tipoVehiculo
+                    };
+                }
+                vehiculosStats[key].litrosTotales += c.litros || 0;
+            });
 
             let vehiculosArray = Object.entries(vehiculosStats).map(([veh, data]) => {
                 const cargasVeh = cargasCronologicas.filter(c => `${c.placa} (Int: ${c.interno})` === veh);
@@ -725,21 +726,20 @@
                 };
             });
 
-            if (fTipo) {
-                vehiculosArray = vehiculosArray.filter(v => v.tipoVehiculo === fTipo);
-            }
-            if (fComb) {
-                vehiculosArray = vehiculosArray.filter(v => {
-                    return cargasCronologicas.some(c => `${c.placa} (Int: ${c.interno})` === v.veh && c.tipoCombustible === fComb);
-                });
-            }
-
             vehiculosArray.sort((a, b) => b.litros - a.litros);
-            const topVeh = vehiculosArray.slice(0, 5);
+
+            const tituloTop = document.getElementById('titulo-top-vehiculos');
+            if (fDia) {
+                tituloTop.innerText = `🚛 Unidades que Cargaron el ${fDia} (${vehiculosArray.length} vehículos)`;
+            } else if (fMes) {
+                tituloTop.innerText = `🚛 Unidades que Cargaron en el Mes ${fMes} (${vehiculosArray.length} vehículos)`;
+            } else {
+                tituloTop.innerText = `🚛 Unidades / Top Consumo, Recorrido y Rendimiento`;
+            }
 
             const vehDiv = document.getElementById('kpi-vehiculos');
-            vehDiv.innerHTML = topVeh.length === 0 ? '<p class="text-slate-400">Sin registros para estos filtros.</p>' :
-                topVeh.map((item, index) => `
+            vehDiv.innerHTML = vehiculosArray.length === 0 ? '<p class="text-slate-400 py-3 text-center">No hay unidades con registros para estos filtros.</p>' :
+                vehiculosArray.map((item, index) => `
                     <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-slate-900">#${index+1} 🚛 ${item.veh}</span>
