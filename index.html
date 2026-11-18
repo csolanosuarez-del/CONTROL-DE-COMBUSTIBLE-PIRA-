@@ -21,7 +21,7 @@
             <span class="text-2xl">⛽</span>
             <div>
                 <h1 class="text-lg font-bold leading-tight">Control de Combustible</h1>
-                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Filtros + Validación Manual</p>
+                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Rendimiento y Consumo Medio</p>
             </div>
         </div>
         <span id="sync-status" class="text-xs bg-slate-700 px-2.5 py-1 rounded-full font-semibold">🔄 Conectando...</span>
@@ -62,7 +62,7 @@
                     <div id="info-personal" class="text-xs text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 hidden"></div>
                 </div>
 
-                <!-- CAPTURA DE FOTOS CON EVIDENCIA (SIN AUTO-LLENADO ERRÓNEO) -->
+                <!-- CAPTURA DE FOTOS CON EVIDENCIA -->
                 <div class="space-y-3 pt-1">
                     <p class="text-xs font-bold text-slate-700">3. Evidencia Fotográfica Obligatoria (Tome la foto e introduzca el valor)</p>
                     
@@ -221,7 +221,7 @@
             </div>
 
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <h3 class="text-sm font-bold text-slate-900">🚛 Top Vehículos con Mayor Consumo</h3>
+                <h3 class="text-sm font-bold text-slate-900">🚛 Top Vehículos: Consumo, Recorrido y Rendimiento</h3>
                 <div id="kpi-vehiculos" class="space-y-2 text-xs"></div>
             </div>
         </div>
@@ -250,7 +250,7 @@
 
     </div>
 
-    <!-- Navegación Inferior de 3 Pestañas -->
+    <!-- Navegación Inferior -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg flex justify-around p-2.5 z-40 max-w-3xl mx-auto">
         <button onclick="cambiarTab('registro')" id="nav-registro" class="flex flex-col items-center text-amber-600 font-bold text-xs">
             <span class="text-lg">⛽</span> Registrar
@@ -296,7 +296,6 @@
                 tiposSet.add(MAESTRO_VEHICULOS[placa].tipo);
             });
 
-            // Poblar selector de tipos de vehículo en el Dashboard
             const tipoSelect = document.getElementById('dash-f-tipo');
             Array.from(tiposSet).sort().forEach(tipo => {
                 const opt = document.createElement('option');
@@ -480,8 +479,8 @@
         function actualizarDashboard() {
             const fTipo = document.getElementById('dash-f-tipo').value;
             const fComb = document.getElementById('dash-f-comb').value;
-            const fMes = document.getElementById('dash-f-mes').value; // Formato YYYY-MM
-            const fDia = document.getElementById('dash-f-dia').value; // Formato YYYY-MM-DD
+            const fMes = document.getElementById('dash-f-mes').value;
+            const fDia = document.getElementById('dash-f-dia').value;
 
             let filtrados = cargasData.filter(c => {
                 if (fTipo && c.tipoVehiculo !== fTipo) return false;
@@ -496,18 +495,27 @@
             let totalKm = 0;
             let totalHoras = 0;
             let porCombustible = {};
-            let porVehiculo = {};
+
+            let vehiculosStats = {};
+            let cargasCronologicas = [...cargasData].sort((a, b) => a.id - b.id);
+            
+            cargasCronologicas.forEach(c => {
+                const key = `${c.placa} (Int: ${c.interno})`;
+                if (!vehiculosStats[key]) {
+                    vehiculosStats[key] = {
+                        litrosTotales: 0,
+                        tipoVehiculo: c.tipoVehiculo
+                    };
+                }
+                vehiculosStats[key].litrosTotales += c.litros || 0;
+            });
 
             filtrados.forEach(c => {
                 totalLitros += c.litros || 0;
                 totalCosto += c.costo || 0;
                 totalKm += c.kmActual || 0;
                 totalHoras += c.horometroActual || 0;
-
                 porCombustible[c.tipoCombustible] = (porCombustible[c.tipoCombustible] || 0) + (c.litros || 0);
-
-                const key = `${c.placa} (Int: ${c.interno})`;
-                porVehiculo[key] = (porVehiculo[key] || 0) + (c.litros || 0);
             });
 
             document.getElementById('kpi-litros').innerText = totalLitros.toLocaleString('es-BO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " L";
@@ -524,13 +532,91 @@
                     </div>
                 `).join('');
 
+            let vehiculosArray = Object.entries(vehiculosStats).map(([veh, data]) => {
+                const cargasVeh = cargasCronologicas.filter(c => `${c.placa} (Int: ${c.interno})` === veh);
+                let kmAnt = 0, kmAct = 0, difKm = 0;
+                let horAnt = 0, horAct = 0, difHor = 0;
+
+                if (cargasVeh.length >= 2) {
+                    kmAnt = cargasVeh[cargasVeh.length - 2].kmActual;
+                    kmAct = cargasVeh[cargasVeh.length - 1].kmActual;
+                    difKm = Math.max(0, kmAct - kmAnt);
+
+                    horAnt = cargasVeh[cargasVeh.length - 2].horometroActual;
+                    horAct = cargasVeh[cargasVeh.length - 1].horometroActual;
+                    difHor = Math.max(0, horAct - horAnt);
+                } else if (cargasVeh.length === 1) {
+                    kmAct = cargasVeh[0].kmActual;
+                    kmAnt = kmAct;
+                    difKm = 0;
+                    horAct = cargasVeh[0].horometroActual;
+                    horAnt = horAct;
+                    difHor = 0;
+                }
+
+                // Litros de la última carga para calcular rendimiento reciente o litros totales consumidos en el tramo
+                const litrosUltimaCarga = cargasVeh.length > 0 ? cargasVeh[cargasVeh.length - 1].litros : 0;
+
+                // Rendimiento: Km por Litro (Km recorridos / Litros de la carga)
+                let kmPorLitro = litrosUltimaCarga > 0 && difKm > 0 ? (difKm / litrosUltimaCarga) : 0;
+                // Consumo Medio: Litros cada 100 Km ((Litros / Km recorridos) * 100)
+                let consumoCada100Km = difKm > 0 && litrosUltimaCarga > 0 ? (litrosUltimaCarga / difKm) * 100 : 0;
+
+                // Litros por Hora (si usa horómetro)
+                let litrosPorHora = difHor > 0 && litrosUltimaCarga > 0 ? (litrosUltimaCarga / difHor) : 0;
+
+                return {
+                    veh: veh,
+                    tipoVehiculo: data.tipoVehiculo,
+                    litros: data.litrosTotales,
+                    litrosUltima: litrosUltimaCarga,
+                    kmAnt: kmAnt,
+                    kmAct: kmAct,
+                    difKm: difKm,
+                    horAnt: horAnt,
+                    horAct: horAct,
+                    difHor: difHor,
+                    kmPorLitro: kmPorLitro,
+                    consumo100Km: consumoCada100Km,
+                    litrosPorHora: litrosPorHora
+                };
+            });
+
+            if (fTipo) {
+                vehiculosArray = vehiculosArray.filter(v => v.tipoVehiculo === fTipo);
+            }
+            if (fComb) {
+                vehiculosArray = vehiculosArray.filter(v => {
+                    return cargasCronologicas.some(c => `${c.placa} (Int: ${c.interno})` === v.veh && c.tipoCombustible === fComb);
+                });
+            }
+
+            vehiculosArray.sort((a, b) => b.litros - a.litros);
+            const topVeh = vehiculosArray.slice(0, 5);
+
             const vehDiv = document.getElementById('kpi-vehiculos');
-            const topVeh = Object.entries(porVehiculo).sort((a, b) => b[1] - a[1]).slice(0, 5);
             vehDiv.innerHTML = topVeh.length === 0 ? '<p class="text-slate-400">Sin registros para estos filtros.</p>' :
-                topVeh.map(([veh, l], index) => `
-                    <div class="flex justify-between p-2 bg-slate-50 rounded-lg font-medium">
-                        <span>#${index+1} 🚛 ${veh}</span>
-                        <strong class="text-emerald-700">${l.toFixed(2)} Litros</strong>
+                topVeh.map((item, index) => `
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-slate-900">#${index+1} 🚛 ${item.veh}</span>
+                            <span class="bg-amber-100 text-amber-800 text-xs font-black px-2 py-0.5 rounded">Total: ${item.litros.toFixed(2)} L</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600 border-t border-slate-200 pt-1.5">
+                            <div>
+                                <span class="text-slate-400 block font-semibold">🛣️ Odómetro & Recorrido:</span>
+                                Ant: ${item.kmAnt.toLocaleString()} | Act: ${item.kmAct.toLocaleString()}
+                                <div class="text-blue-600 font-bold">Recorrido: +${item.difKm.toLocaleString()} Km</div>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block font-semibold">⚡ Rendimiento & Consumo Medio:</span>
+                                ${item.difKm > 0 ? `
+                                    <span class="text-emerald-700 font-bold">${item.kmPorLitro.toFixed(2)} Km/L</span> 
+                                    <span class="text-slate-500">(${item.consumo100Km.toFixed(1)} L / 100 Km)</span>
+                                ` : `<span class="text-slate-400">Sin tramo registrado</span>`}
+                                ${item.difHor > 0 ? `<div class="text-purple-700 font-semibold mt-0.5">Horas: +${item.difHor.toLocaleString()}h (${item.litrosPorHora.toFixed(2)} L/h)</div>` : ''}
+                            </div>
+                        </div>
                     </div>
                 `).join('');
         }
@@ -560,7 +646,7 @@
                         <button onclick="eliminarCarga(${c.id})" class="text-rose-600 text-xs font-bold bg-rose-50 px-2 py-1 rounded-lg">🗑️</button>
                     </div>
                     <div class="grid grid-cols-4 gap-1.5 bg-white p-2 rounded-lg border text-center text-xs">
-                        <div><span class="block text-[10px] text-slate-400">Km</span><strong>${c.kmActual}</strong></div>
+                        <div><span class="block text-[10px] text-slate-400">Km Actual</span><strong>${c.kmActual}</strong></div>
                         <div><span class="block text-[10px] text-slate-400">Horóm.</span><strong>${c.horometroActual}</strong></div>
                         <div><span class="block text-[10px] text-slate-400">${c.tipoCombustible}</span><strong class="text-amber-700">${c.litros} L</strong></div>
                         <div><span class="block text-[10px] text-slate-400">Total</span><strong class="text-emerald-700">${c.costo} Bs</strong></div>
