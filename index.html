@@ -21,7 +21,7 @@
             <span class="text-2xl">⛽</span>
             <div>
                 <h1 class="text-lg font-bold leading-tight">Control de Combustible</h1>
-                <p class="text-[11px] text-amber-400 font-medium">Validación Fotográfica + OCR</p>
+                <p class="text-[11px] text-amber-400 font-medium">Validación Fotográfica + Dashboard + Excel</p>
             </div>
         </div>
         <span id="sync-status" class="text-xs bg-slate-700 px-2.5 py-1 rounded-full font-semibold">🔄 Conectando...</span>
@@ -66,7 +66,7 @@
                 <div class="space-y-3 pt-1">
                     <p class="text-xs font-bold text-slate-700">3. Evidencia Fotográfica Obligatoria (Compresión Automática)</p>
                     
-                    <!-- Foto 1: Odómetro / Kilometraje -->
+                    <!-- Foto 1: Odómetro -->
                     <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 bg-slate-50 space-y-2">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold text-slate-700">📸 Foto Odómetro (Km)</span>
@@ -91,7 +91,7 @@
                     <!-- Foto 2: Horómetro -->
                     <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 bg-slate-50 space-y-2">
                         <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold text-slate-700">⏱️ Foto Horómetro (Opcional si no aplica)</span>
+                            <span class="text-xs font-bold text-slate-700">⏱️ Foto Horómetro (Opcional)</span>
                             <label class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shadow">
                                 Tomar / Subir Foto
                                 <input type="file" accept="image/*" capture="environment" onchange="procesarFoto(event, 'hor')" class="hidden">
@@ -157,13 +157,37 @@
             </form>
         </div>
 
-        <!-- PESTAÑA 2: AUDITORÍA VISUAL Y EXPORTACIÓN EXCEL -->
+        <!-- PESTAÑA 2: INDICADORES / DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Total Litros Despachados</span>
+                    <h2 id="kpi-litros" class="text-2xl font-black text-amber-600 mt-1">0.00 L</h2>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Costo Acumulado</span>
+                    <h2 id="kpi-costo" class="text-2xl font-black text-emerald-600 mt-1">0.00 Bs</h2>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <h3 class="text-sm font-bold text-slate-900">📊 Resumen por Tipo de Combustible</h3>
+                <div id="kpi-combustible" class="space-y-2 text-xs"></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <h3 class="text-sm font-bold text-slate-900">🚛 Top Vehículos con Mayor Consumo</h3>
+                <div id="kpi-vehiculos" class="space-y-2 text-xs"></div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: AUDITORÍA VISUAL Y EXPORTACIÓN EXCEL -->
         <div id="tab-auditoria" class="tab-content space-y-4">
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
                 <div class="flex justify-between items-center flex-wrap gap-2">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">🔍 Auditoría de Cargas y Fotos</h2>
-                        <p class="text-xs text-slate-500">Haz clic en cualquier foto para verificar los números reales</p>
+                        <p class="text-xs text-slate-500">Verifica fotos o descarga tu base completa a Excel</p>
                     </div>
                     <button onclick="exportarExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow flex items-center gap-1.5">
                         📥 Descargar para Excel
@@ -181,13 +205,16 @@
 
     </div>
 
-    <!-- Navegación Inferior -->
+    <!-- Navegación Inferior de 3 Pestañas -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg flex justify-around p-2.5 z-40 max-w-3xl mx-auto">
         <button onclick="cambiarTab('registro')" id="nav-registro" class="flex flex-col items-center text-amber-600 font-bold text-xs">
-            <span class="text-lg">⛽</span> Registrar Carguío
+            <span class="text-lg">⛽</span> Registrar
+        </button>
+        <button onclick="cambiarTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center text-slate-400 font-medium text-xs">
+            <span class="text-lg">📊</span> Indicadores
         </button>
         <button onclick="cambiarTab('auditoria')" id="nav-auditoria" class="flex flex-col items-center text-slate-400 font-medium text-xs">
-            <span class="text-lg">📸</span> Auditar Fotos / Excel
+            <span class="text-lg">📸</span> Auditoría / Excel
         </button>
     </nav>
 
@@ -228,13 +255,14 @@
             document.getElementById('sync-status').innerText = "🟢 En línea";
             document.getElementById('sync-status').className = "text-xs bg-emerald-600 px-2.5 py-1 rounded-full font-semibold";
             renderizarAuditoria();
+            actualizarDashboard();
         }, () => {
             document.getElementById('sync-status').innerText = "🔴 Sin red";
             document.getElementById('sync-status').className = "text-xs bg-rose-600 px-2.5 py-1 rounded-full font-semibold";
         });
 
         function cambiarTab(tab) {
-            ['registro', 'auditoria'].forEach(t => {
+            ['registro', 'dashboard', 'auditoria'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.remove('active');
                 document.getElementById(`nav-${t}`).className = "flex flex-col items-center text-slate-400 font-medium text-xs";
             });
@@ -390,6 +418,49 @@
             if (confirm("¿Eliminar este registro de combustible?")) {
                 db.ref(`combustible_flota/cargas/${id}`).remove();
             }
+        }
+
+        function actualizarDashboard() {
+            let totalLitros = 0;
+            let totalCosto = 0;
+            let porCombustible = {};
+            let porVehiculo = {};
+
+            cargasData.forEach(c => {
+                totalLitros += c.litros || 0;
+                totalCosto += c.costo || 0;
+
+                // Agrupar por combustible
+                porCombustible[c.tipoCombustible] = (porCombustible[c.tipoCombustible] || 0) + (c.litros || 0);
+
+                // Agrupar por vehículo
+                const key = `${c.placa} (Int: ${c.interno})`;
+                porVehiculo[key] = (porVehiculo[key] || 0) + (c.litros || 0);
+            });
+
+            document.getElementById('kpi-litros').innerText = totalLitros.toLocaleString('es-BO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " L";
+            document.getElementById('kpi-costo').innerText = totalCosto.toLocaleString('es-BO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " Bs";
+
+            // Renderizar combustible
+            const combDiv = document.getElementById('kpi-combustible');
+            combDiv.innerHTML = Object.keys(porCombustible).length === 0 ? '<p class="text-slate-400">Sin registros aún.</p>' :
+                Object.entries(porCombustible).map(([comb, l]) => `
+                    <div class="flex justify-between p-2 bg-slate-50 rounded-lg font-medium">
+                        <span>⛽ ${comb}</span>
+                        <strong class="text-amber-700">${l.toFixed(2)} Litros</strong>
+                    </div>
+                `).join('');
+
+            // Renderizar top vehículos
+            const vehDiv = document.getElementById('kpi-vehiculos');
+            const topVeh = Object.entries(porVehiculo).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            vehDiv.innerHTML = topVeh.length === 0 ? '<p class="text-slate-400">Sin registros aún.</p>' :
+                topVeh.map(([veh, l], index) => `
+                    <div class="flex justify-between p-2 bg-slate-50 rounded-lg font-medium">
+                        <span>#${index+1} 🚛 ${veh}</span>
+                        <strong class="text-emerald-700">${l.toFixed(2)} Litros</strong>
+                    </div>
+                `).join('');
         }
 
         function renderizarAuditoria() {
