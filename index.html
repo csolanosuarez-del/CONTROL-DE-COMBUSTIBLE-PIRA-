@@ -20,7 +20,7 @@
             <span class="text-2xl">⛽</span>
             <div>
                 <h1 class="text-lg font-bold leading-tight">Control de Combustible</h1>
-                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Rendimiento y Consumo Medio</p>
+                <p class="text-[11px] text-amber-400 font-medium">Dashboard con Edición y Rendimiento</p>
             </div>
         </div>
         <span id="sync-status" class="text-xs bg-slate-700 px-2.5 py-1 rounded-full font-semibold">🔄 Conectando...</span>
@@ -231,7 +231,7 @@
                 <div class="flex justify-between items-center flex-wrap gap-2">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">🔍 Auditoría de Cargas y Fotos</h2>
-                        <p class="text-xs text-slate-500">Verifica fotos o descarga tu base completa a Excel</p>
+                        <p class="text-xs text-slate-500">Verifica fotos, edita errores o descarga a Excel</p>
                     </div>
                     <button onclick="exportarExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow flex items-center gap-1.5">
                         📥 Descargar para Excel
@@ -266,6 +266,81 @@
     <div id="modal-foto" onclick="cerrarModalFoto()" class="fixed inset-0 bg-black/85 z-50 hidden flex flex-col items-center justify-center p-4">
         <img id="modal-img" class="max-w-full max-h-[80vh] rounded-xl border-2 border-white shadow-2xl">
         <p id="modal-caption" class="text-white text-xs font-bold mt-3 bg-slate-800 px-4 py-2 rounded-full"></p>
+    </div>
+
+    <!-- Modal de Edición de Registro -->
+    <div id="modal-editar" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl p-5 shadow-2xl space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-sm font-black text-slate-900">✏️ Editar Registro de Combustible</h3>
+                <button onclick="cerrarModalEditar()" class="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+            </div>
+            
+            <input type="hidden" id="edit-id">
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Fecha</label>
+                    <input type="date" id="edit-fecha" class="w-full p-2 border rounded-xl text-xs font-medium outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Turno</label>
+                    <select id="edit-turno" class="w-full p-2 border rounded-xl text-xs font-bold outline-none">
+                        <option value="DIA">DÍA</option>
+                        <option value="NOCHE">NOCHE</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Placa del Vehículo</label>
+                <input type="text" id="edit-placa" class="w-full p-2 border rounded-xl text-xs font-bold uppercase outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Código Conductor</label>
+                    <input type="text" id="edit-codigo" class="w-full p-2 border rounded-xl text-xs font-bold uppercase outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Combustible</label>
+                    <select id="edit-tipo-comb" class="w-full p-2 border rounded-xl text-xs font-bold outline-none">
+                        <option value="Diésel">Diésel</option>
+                        <option value="Gasolina">Gasolina</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1">Km Actual</label>
+                    <input type="number" step="0.1" id="edit-km" class="w-full p-2 border rounded-xl text-xs font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1">Litros (L)</label>
+                    <input type="number" step="0.01" id="edit-litros" class="w-full p-2 border rounded-xl text-xs font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1">Costo (Bs)</label>
+                    <input type="number" step="0.01" id="edit-costo" class="w-full p-2 border rounded-xl text-xs font-bold outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Horómetro Actual</label>
+                <input type="number" step="0.1" id="edit-horometro" class="w-full p-2 border rounded-xl text-xs font-bold outline-none">
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Encargado Surtidor</label>
+                <input type="text" id="edit-despachador" class="w-full p-2 border rounded-xl text-xs outline-none">
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="cerrarModalEditar()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold p-2.5 rounded-xl text-xs">Cancelar</button>
+                <button onclick="guardarEdicion()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-2.5 rounded-xl text-xs">💾 Guardar Cambios</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -408,16 +483,6 @@
                 alert("⚠️ Verifique que los Litros y el Costo (Bs) sean mayores a 0.");
                 return;
             }
-            if (litros > 3000) {
-                if (!confirm(`⚠️ ALERTA: Estás registrando ${litros} litros. ¿Es un valor correcto y no un error de dedo?`)) {
-                    return;
-                }
-            }
-            if (km > 2000000) {
-                if (!confirm(`⚠️ ALERTA: El kilometraje ingresado (${km} Km) es extremadamente alto. ¿Deseas continuar?`)) {
-                    return;
-                }
-            }
 
             const veh = MAESTRO_VEHICULOS[placa] || { interno: 'S/I', tipo: 'No registrado', empresa: 'N/A' };
             const per = MAESTRO_PERSONAL[cod] || { nombre: 'Código ' + cod, cargo: 'N/A' };
@@ -469,6 +534,69 @@
                     alert("❌ Error al guardar en la base de datos: " + err.message);
                     btnGuardar.innerText = "✅ Validar y Guardar Carguío";
                     btnGuardar.disabled = false;
+                });
+        }
+
+        // FUNCIONES DE EDICIÓN
+        function abrirModalEditar(id) {
+            const reg = cargasData.find(c => c.id === id);
+            if (!reg) return;
+
+            document.getElementById('edit-id').value = reg.id;
+            document.getElementById('edit-fecha').value = reg.fecha;
+            document.getElementById('edit-turno').value = reg.turno;
+            document.getElementById('edit-placa').value = reg.placa;
+            document.getElementById('edit-codigo').value = reg.codigoConductor;
+            document.getElementById('edit-tipo-comb').value = reg.tipoCombustible;
+            document.getElementById('edit-km').value = reg.kmActual;
+            document.getElementById('edit-litros').value = reg.litros;
+            document.getElementById('edit-costo').value = reg.costo;
+            document.getElementById('edit-horometro').value = reg.horometroActual;
+            document.getElementById('edit-despachador').value = reg.despachador;
+
+            document.getElementById('modal-editar').classList.remove('hidden');
+        }
+
+        function cerrarModalEditar() {
+            document.getElementById('modal-editar').classList.add('hidden');
+        }
+
+        function guardarEdicion() {
+            const id = parseInt(document.getElementById('edit-id').value);
+            const regOriginal = cargasData.find(c => c.id === id);
+            if (!regOriginal) return;
+
+            const placa = document.getElementById('edit-placa').value.trim().toUpperCase();
+            const cod = document.getElementById('edit-codigo').value.trim().toUpperCase();
+            const veh = MAESTRO_VEHICULOS[placa] || { interno: regOriginal.interno, tipo: regOriginal.tipoVehiculo, empresa: regOriginal.empresa };
+            const per = MAESTRO_PERSONAL[cod] || { nombre: regOriginal.nombreConductor, cargo: regOriginal.cargoConductor };
+
+            const registroActualizado = {
+                ...regOriginal,
+                fecha: document.getElementById('edit-fecha').value,
+                turno: document.getElementById('edit-turno').value,
+                placa: placa,
+                interno: veh.interno,
+                tipoVehiculo: veh.tipo,
+                empresa: veh.empresa,
+                codigoConductor: cod,
+                nombreConductor: per.nombre,
+                cargoConductor: per.cargo,
+                tipoCombustible: document.getElementById('edit-tipo-comb').value,
+                kmActual: parseFloat(document.getElementById('edit-km').value) || 0,
+                litros: parseFloat(document.getElementById('edit-litros').value) || 0,
+                costo: parseFloat(document.getElementById('edit-costo').value) || 0,
+                horometroActual: parseFloat(document.getElementById('edit-horometro').value) || 0,
+                despachador: document.getElementById('edit-despachador').value.trim()
+            };
+
+            db.ref(`combustible_flota/cargas/${id}`).set(registroActualizado)
+                .then(() => {
+                    alert("✅ ¡Registro actualizado con éxito!");
+                    cerrarModalEditar();
+                })
+                .catch((err) => {
+                    alert("❌ Error al actualizar: " + err.message);
                 });
         }
 
@@ -660,7 +788,10 @@
                             <span class="text-xs font-bold text-slate-700 ml-1">Int: ${c.interno} • ${c.tipoVehiculo}</span>
                             <p class="text-[11px] text-slate-500 mt-0.5">📅 ${c.fecha} (${c.turno}) | 👤 ${c.nombreConductor} (Cód: ${c.codigoConductor})</p>
                         </div>
-                        <button onclick="eliminarCarga(${c.id})" class="text-rose-600 text-xs font-bold bg-rose-50 px-2 py-1 rounded-lg">🗑️</button>
+                        <div class="flex gap-1">
+                            <button onclick="abrirModalEditar(${c.id})" class="text-blue-600 text-xs font-bold bg-blue-50 px-2 py-1 rounded-lg">✏️</button>
+                            <button onclick="eliminarCarga(${c.id})" class="text-rose-600 text-xs font-bold bg-rose-50 px-2 py-1 rounded-lg">🗑️</button>
+                        </div>
                     </div>
                     <div class="grid grid-cols-4 gap-1.5 bg-white p-2 rounded-lg border text-center text-xs">
                         <div><span class="block text-[10px] text-slate-400">Km Actual</span><strong>${c.kmActual}</strong></div>
