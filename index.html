@@ -170,6 +170,17 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Total Kilómetros (Odómetro)</span>
+                    <h2 id="kpi-km" class="text-xl font-black text-blue-600 mt-1">0.0 Km</h2>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Total Horas (Horómetro)</span>
+                    <h2 id="kpi-horas" class="text-xl font-black text-purple-600 mt-1">0.0 Hrs</h2>
+                </div>
+            </div>
+
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <h3 class="text-sm font-bold text-slate-900">📊 Resumen por Tipo de Combustible</h3>
                 <div id="kpi-combustible" class="space-y-2 text-xs"></div>
@@ -423,25 +434,28 @@
         function actualizarDashboard() {
             let totalLitros = 0;
             let totalCosto = 0;
+            let totalKm = 0;
+            let totalHoras = 0;
             let porCombustible = {};
             let porVehiculo = {};
 
             cargasData.forEach(c => {
                 totalLitros += c.litros || 0;
                 totalCosto += c.costo || 0;
+                totalKm += c.kmActual || 0;
+                totalHoras += c.horometroActual || 0;
 
-                // Agrupar por combustible
                 porCombustible[c.tipoCombustible] = (porCombustible[c.tipoCombustible] || 0) + (c.litros || 0);
 
-                // Agrupar por vehículo
                 const key = `${c.placa} (Int: ${c.interno})`;
                 porVehiculo[key] = (porVehiculo[key] || 0) + (c.litros || 0);
             });
 
             document.getElementById('kpi-litros').innerText = totalLitros.toLocaleString('es-BO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " L";
             document.getElementById('kpi-costo').innerText = totalCosto.toLocaleString('es-BO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " Bs";
+            document.getElementById('kpi-km').innerText = totalKm.toLocaleString('es-BO', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + " Km";
+            document.getElementById('kpi-horas').innerText = totalHoras.toLocaleString('es-BO', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + " Hrs";
 
-            // Renderizar combustible
             const combDiv = document.getElementById('kpi-combustible');
             combDiv.innerHTML = Object.keys(porCombustible).length === 0 ? '<p class="text-slate-400">Sin registros aún.</p>' :
                 Object.entries(porCombustible).map(([comb, l]) => `
@@ -451,7 +465,6 @@
                     </div>
                 `).join('');
 
-            // Renderizar top vehículos
             const vehDiv = document.getElementById('kpi-vehiculos');
             const topVeh = Object.entries(porVehiculo).sort((a, b) => b[1] - a[1]).slice(0, 5);
             vehDiv.innerHTML = topVeh.length === 0 ? '<p class="text-slate-400">Sin registros aún.</p>' :
